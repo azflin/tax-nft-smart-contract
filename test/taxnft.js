@@ -16,14 +16,35 @@ describe('taxNFT contract', function () {
     );
   });
 
-  it("should be named TaxNFT", async function () {
-    expect(await this.taxNFT.name()).to.be.equal("TaxNFT");
-  });
-
   it("should only mint when minting isn't paused", async function () {
     const taxNFT = this.taxNFT.connect(this.account1);
     await taxNFT.mint(1, {value: ethers.utils.parseEther("0.08")});
     await taxNFT.setMintingPaused(true);
     await expect(taxNFT.mint(1, {value: ethers.utils.parseEther("0.08")})).to.be.revertedWith("Minting has been paused.");
+  });
+
+  it("should withdraw correct amounts", async function () {
+    const taxNFT = this.taxNFT.connect(this.account1);
+    await taxNFT.mint(10, {value: ethers.utils.parseEther("0.8")});
+    await taxNFT.withdraw();
+    // These 3 addresses are the default hardhat accounts that start with 10,000 ETH
+    expect(await ethers.provider.getBalance(await taxNFT.dev1())).to.equal(ethers.utils.parseEther("10000.04"));
+    expect(await ethers.provider.getBalance(await taxNFT.dev2())).to.equal(ethers.utils.parseEther("10000.04"));
+    expect(await ethers.provider.getBalance(await taxNFT.otherPayee())).to.equal(ethers.utils.parseEther("10000.72"));
+  });
+
+  it("should claim code", async function () {
+    const taxNFT = this.taxNFT.connect(this.account1);
+    await taxNFT.mint(1, {value: ethers.utils.parseEther("0.08")});
+    expect(await taxNFT.claimedCode(1)).to.equal(false);
+    await taxNFT.claimCode(1);
+    expect(await taxNFT.claimedCode(1)).to.equal(true);
+  });
+
+  it("should not let you claim a code if you don't own the NFT", async function () {
+    let taxNFT = this.taxNFT.connect(this.account1);
+    await taxNFT.mint(1, {value: ethers.utils.parseEther("0.08")});
+    taxNFT = this.taxNFT.connect(this.account2);
+    await expect(taxNFT.claimCode(1)).to.be.revertedWith("You do not own this tokenId");
   });
 });
