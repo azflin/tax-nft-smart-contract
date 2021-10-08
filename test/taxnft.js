@@ -36,9 +36,17 @@ describe('taxNFT contract', function () {
   it("should claim code", async function () {
     const taxNFT = this.taxNFT.connect(this.account1);
     await taxNFT.mint(1, {value: ethers.utils.parseEther("0.08")});
-    expect(await taxNFT.claimedCode(1)).to.equal(false);
+    expect(await taxNFT.claimedCode(1)).to.equal('0x0000000000000000000000000000000000000000');
     await taxNFT.claimCode(1);
-    expect(await taxNFT.claimedCode(1)).to.equal(true);
+    expect(await taxNFT.claimedCode(1)).to.equal(this.account1.address);
+  });
+
+  it("should not let you claim claimed code", async function () {
+    const taxNFT = this.taxNFT.connect(this.account1);
+    await taxNFT.mint(1, {value: ethers.utils.parseEther("0.08")});
+    expect(await taxNFT.claimedCode(1)).to.equal('0x0000000000000000000000000000000000000000');
+    await taxNFT.claimCode(1);
+    await expect(taxNFT.claimCode(1)).to.be.revertedWith("tokenId has already been claimed");
   });
 
   it("should not let you claim a code if you don't own the NFT", async function () {

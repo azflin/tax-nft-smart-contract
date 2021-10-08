@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 contract TaxNFT is ERC721Enumerable, Ownable {
 
@@ -12,7 +13,7 @@ contract TaxNFT is ERC721Enumerable, Ownable {
     address public dev1 = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
     address public dev2 = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
     address public otherPayee = 0x90F79bf6EB2c4f870365E785982E1f101E93b906;
-    mapping(uint => bool) public claimedCode;
+    mapping(uint => address) public claimedCode;
 
     string private _contractURI = "https://dummyurl.com/contract_metadata/";
     string private _tokenURI = "https://dummyurl.com/metadata/";
@@ -31,7 +32,8 @@ contract TaxNFT is ERC721Enumerable, Ownable {
 
     function claimCode(uint _tokenId) external {
         require(ownerOf(_tokenId) == msg.sender, "You do not own this tokenId");
-        claimedCode[_tokenId] = true;
+        require(claimedCode[_tokenId] == address(0), "tokenId has already been claimed");
+        claimedCode[_tokenId] = msg.sender;
     }
 
     function setMintingPaused(bool _mintingPaused) external onlyOwner {
